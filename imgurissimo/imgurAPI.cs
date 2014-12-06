@@ -121,6 +121,7 @@ namespace imgurissimo
         private async Task<string> Get(string request)
         {
             string RequestURL = BaseURL + request;
+            Debug.WriteLine("HTTP GET {0}", request);
             HttpResponseMessage response = await Client.GetAsync(RequestURL);
             return await response.Content.ReadAsStringAsync();
         }

@@ -31,6 +31,7 @@ namespace imgurissimo
         public ObservableCollection<imageInfo> ListOfPictures = new ObservableCollection<imageInfo>();
         private string CurrentSubreddit;
         private int CurrentPage = 0;
+        private bool HasReachedEndOfTheLine = false;
         private imgurAPI Client;
 
         public ShowSubredditPage()
@@ -76,10 +77,8 @@ namespace imgurissimo
             return null;
         }
 
-        private void FlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void UpdateStatus()
         {
-            if (MyFlipView.SelectedIndex < 0)
-                return;
             imageInfo info = MyFlipView.SelectedItem as imageInfo;
             double percent = 100.0 * MyFlipView.SelectedIndex / ListOfPictures.Count;
             MyInfoText.Text = string.Format("Image {0:000} of {1:000} ({2:00.00}%)\n{3}",
@@ -87,21 +86,38 @@ namespace imgurissimo
                 ListOfPictures.Count,
                 percent,
                 info.Title);
+        }
+
+        private async void FlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MyFlipView.SelectedIndex < 0)
+                return;
+            UpdateStatus();
 
             Debug.Assert(sender == MyFlipView);
             var flipViewItem = MyFlipView.ContainerFromIndex(MyFlipView.SelectedIndex);
             ResizeImageToFit(FindFirstElementInVisualTree<ScrollViewer>(flipViewItem));
+
+            if(!HasReachedEndOfTheLine)
+            {
+                if( (MyFlipView.SelectedIndex > 1) && 
+                    (MyFlipView.SelectedIndex == ListOfPictures.Count-1))
+                {
+                    Debug.WriteLine("need to load more...");
+                    if(!await LoadMore(CurrentSubreddit))
+                    {
+                        Debug.WriteLine("SORRY: END OF LINE REACHED");
+                        HasReachedEndOfTheLine = true;
+                    }
+                }
+            }
         }
 
         private void DelayedResizeImageToFit(ScrollViewer sv)
         {
-            Debug.WriteLine("DelayedResizeImageToFit called");
             var image = FindFirstElementInVisualTree<Image>(sv);
             if (image == null)
-            {
-                Debug.WriteLine("DelayedResizeImageToFit aborts, because image is null");
                 return;
-            }
 
             var Scale = Window.Current.Bounds;
 
@@ -116,24 +132,11 @@ namespace imgurissimo
             }
             if ((image.ActualHeight > 0) && (image.ActualHeight > 0))
             {
-
-                Debug.WriteLine("image: {0:0000.00} x {1:0000.00}, Screen: {2:0000.00} x {3:0000.00}, Zoom:{4:0000.00}",
-                    image.ActualWidth,
-                    image.ActualHeight,
-                    Scale.Width,
-                    Scale.Height,
-                    factor);
-
                 float f = (float)factor;
                 if (f != sv.ZoomFactor)
                 {
                     sv.ChangeView(1.0f, 1.0f, f, true);
                 }
-            }
-            else
-            {
-                Debug.WriteLine("DelayedResizeImageToFit does nothing, image size is not valid yet");
-
             }
         }
 
@@ -150,7 +153,6 @@ namespace imgurissimo
                     DelayedResizeImageToFit(sv);
                 });
             }, period);
-
         }
 
         private void ScrollViewer_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
@@ -158,24 +160,11 @@ namespace imgurissimo
             ResizeImageToFit(sender as ScrollViewer);
         }
 
-        public async Task<bool> SwitchToSubreddit(string subreddit)
+        private async Task<bool> LoadMore(string subreddit)
         {
             MyFlipView.Opacity = 0.5;
-            ListOfPictures.Clear();
-            CurrentPage = 0;
-
-            if(Client == null)
-            {
-                Client = new imgurAPI();
-                if( !await Client.Connect() )
-                {
-                    var messageDialog = new MessageDialog("Sorry, you don't have a valid imgur key-set", "Oh my!");
-                    await messageDialog.ShowAsync();
-                    return false;
-                }
-            }
-             
-            string response = await Client.GetSubreddit(subreddit, "time", CurrentPage);
+            bool success = false;
+            string response = await Client.GetSubreddit(subreddit, "time", CurrentPage+1);
             Debug.WriteLine(response);
             JsonObject root = JsonObject.Parse(response);
             if (root.GetNamedBoolean("success"))
@@ -188,15 +177,38 @@ namespace imgurissimo
                     string title = item.GetNamedString("title", "");
                     ListOfPictures.Add(new imageInfo(title, link));
                 }
-                CurrentSubreddit = subreddit;
-                ChangeButton.Content = string.Format("/r/{0}", subreddit);
-            }
-            else
-            {
-                Debug.WriteLine("imgur cannot read gallery: {0}", response);
+                CurrentPage += 1;
+                UpdateStatus();
+                if(CurrentPage == 0)
+                {
+                    CurrentSubreddit = subreddit;
+                    ChangeButton.Content = string.Format("/r/{0}", subreddit);
+                }
+                success = true;
             }
             MyFlipView.Opacity = 1.0;
-            return true;
+            return success;
+        }
+
+        public async Task<bool> SwitchToSubreddit(string subreddit)
+        {
+            MyFlipView.Opacity = 0.5;
+            ListOfPictures.Clear();
+            CurrentPage = -1;
+            HasReachedEndOfTheLine = false;
+
+            if(Client == null)
+            {
+                Client = new imgurAPI();
+                if( !await Client.Connect() )
+                {
+                    var messageDialog = new MessageDialog("Sorry, you don't have a valid imgur key-set", "Oh my!");
+                    await messageDialog.ShowAsync();
+                    MyFlipView.Opacity = 1.0;
+                    return false;
+                }
+            }
+            return await LoadMore(subreddit);
         }
 
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
