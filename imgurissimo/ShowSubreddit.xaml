@@ -1,5 +1,5 @@
 ﻿<Page
-    x:Class="imgurissimo.MainPage"
+    x:Class="imgurissimo.ShowSubredditPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:imgurissimo"
@@ -7,13 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Page.BottomAppBar>
-        <AppBar Name="MyAppBar">
-            <StackPanel Orientation="Horizontal">
-                <Button Style="{StaticResource OpenLocalAppBarButtonStyle}" Content="&#xE197;"/>
-            </StackPanel>
-        </AppBar>
-    </Page.BottomAppBar>
     <ScrollViewer HorizontalAlignment="Center"
                                   VerticalAlignment="Center"
                                   HorizontalScrollBarVisibility="Auto"

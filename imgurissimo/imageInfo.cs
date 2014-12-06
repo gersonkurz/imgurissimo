@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace imgurissimo.imgur
+namespace imgurissimo
 {
     public class imageInfo 
     {

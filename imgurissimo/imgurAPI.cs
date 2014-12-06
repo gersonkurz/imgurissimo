@@ -30,7 +30,7 @@ namespace imgurissimo
             return await Get("/gallery/r/" + subreddit + "/" + sort + "/" + page.ToString());
         }
 
-        public async Task<imgur.imageInfo> GetImage(string id)
+        public async Task<imageInfo> GetImage(string id)
         {
             string response = await Get("/gallery/r/image/" + id);
 
@@ -38,7 +38,7 @@ namespace imgurissimo
             if(root.GetNamedBoolean("success"))
             {
                 JsonObject data = root.GetNamedObject("data");
-                return new imgur.imageInfo(
+                return new imageInfo(
                     data.GetNamedString("title"),
                     data.GetNamedString("link"));
             }
@@ -92,7 +92,7 @@ namespace imgurissimo
             return root.GetNamedBoolean("success");
         }
 
-        public async Task<bool> SaveAsFile(string link)
+        public async Task<bool> SaveAsFile(string link, string subreddit)
         {
             int k = link.LastIndexOf("/");
             Debug.Assert(k >= 0);
@@ -107,7 +107,7 @@ namespace imgurissimo
             using(var inputStream = await response.Content.ReadAsStreamAsync())
             {
                 var one = await KnownFolders.PicturesLibrary.CreateFolderAsync("r", CreationCollisionOption.OpenIfExists);
-                var two = await one.CreateFolderAsync("funny", CreationCollisionOption.OpenIfExists);
+                var two = await one.CreateFolderAsync(subreddit, CreationCollisionOption.OpenIfExists);
                 var storageFile = await two.CreateFileAsync(filename, CreationCollisionOption.ReplaceExisting);
                 using (Stream outputStream = await storageFile.OpenStreamForWriteAsync())
                 {
@@ -116,7 +116,6 @@ namespace imgurissimo
 
             }
             return true;
-            //Windows.Storage.ApplicationData.current.localFolder.createFolderAsync("foo", Windows.Storage.CreationCollisionOption.replaceExisting)
         }
 
         private async Task<string> Get(string request)

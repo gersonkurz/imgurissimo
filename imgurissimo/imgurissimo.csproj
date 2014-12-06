@@ -110,7 +110,7 @@
     </Compile>
     <Compile Include="BindableBase.cs" />
     <Compile Include="imgurAPI.cs" />
-    <Compile Include="imgur\imageInfo.cs" />
+    <Compile Include="imageInfo.cs" />
     <Compile Include="ShowSubreddit.xaml.cs">
       <DependentUpon>ShowSubreddit.xaml</DependentUpon>
     </Compile>

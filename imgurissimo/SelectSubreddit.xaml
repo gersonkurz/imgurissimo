@@ -6,6 +6,15 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+    <Page.BottomAppBar>
+        <AppBar Name="MyAppBar">
+            <StackPanel Orientation="Horizontal">
+                <Button Style="{StaticResource OpenLocalAppBarButtonStyle}" 
+                        Content="&#xE197;"
+                        Click="Button_Click"/>
+            </StackPanel>
+        </AppBar>
+    </Page.BottomAppBar>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <GridView x:Name="itemListView">
@@ -16,7 +25,9 @@
                         Width="290"
                         FontSize="30"
                         Content="{Binding Name}" 
-                        Foreground="#88FFFFFF" 
+                        Foreground="#FFFFFFFF" 
+                        Tag="{Binding}"
+                        Background="{Binding Background}"
                         Click="ChangeButton_Click"
                         VerticalAlignment="Center" />
                     </StackPanel>

@@ -1,5 +1,5 @@
 # git ignore file
-viehstall/obj/*
+imgurissimo/obj/*
 *.suo
-viehstall/bin/*
-viehstall/AppPackages/*
+imgurissimo/bin/*
+imgurissimo/AppPackages/*

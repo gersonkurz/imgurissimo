@@ -26,18 +26,17 @@ namespace imgurissimo
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MainPage : Page
+    public sealed partial class ShowSubredditPage : Page
     {
-        public ObservableCollection<imgur.imageInfo> ListOfPictures = new ObservableCollection<imgur.imageInfo>();
-        private string CurrentSubreddit = "funny";
+        public ObservableCollection<imageInfo> ListOfPictures = new ObservableCollection<imageInfo>();
+        private string CurrentSubreddit;
         private int CurrentPage = 0;
         private imgurAPI Client;
 
-        public MainPage()
+        public ShowSubredditPage()
         {
             this.InitializeComponent();
             this.Loaded += MainPage_Loaded;
-            
         }
 
         async protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -81,8 +80,7 @@ namespace imgurissimo
         {
             if (MyFlipView.SelectedIndex < 0)
                 return;
-            imgur.imageInfo info = MyFlipView.SelectedItem as imgur.imageInfo;
-
+            imageInfo info = MyFlipView.SelectedItem as imageInfo;
             double percent = 100.0 * MyFlipView.SelectedIndex / ListOfPictures.Count;
             MyInfoText.Text = string.Format("Image {0:000} of {1:000} ({2:00.00}%)\n{3}",
                 MyFlipView.SelectedIndex + 1,
@@ -93,31 +91,11 @@ namespace imgurissimo
             Debug.Assert(sender == MyFlipView);
             var flipViewItem = MyFlipView.ContainerFromIndex(MyFlipView.SelectedIndex);
             ResizeImageToFit(FindFirstElementInVisualTree<ScrollViewer>(flipViewItem));
-            MyAppBar.IsEnabled = true;
-        }
-
-
-
-        private async Task<bool> PhysicallyDeleteThisFile(string filename)
-        {
-            try
-            {
-                Debug.WriteLine("Physically delete {0}", filename);
-                var storageFile = await StorageFile.GetFileFromPathAsync(filename);
-                await storageFile.DeleteAsync();
-                return true;
-            }
-            catch (Exception)
-            {
-                Debug.WriteLine("Sorry, unable to delete {0}", filename);
-                return false;
-            }
         }
 
         private void DelayedResizeImageToFit(ScrollViewer sv)
         {
             Debug.WriteLine("DelayedResizeImageToFit called");
-
             var image = FindFirstElementInVisualTree<Image>(sv);
             if (image == null)
             {
@@ -196,8 +174,6 @@ namespace imgurissimo
                     return false;
                 }
             }
-
-            
              
             string response = await Client.GetSubreddit(subreddit, "time", CurrentPage);
             Debug.WriteLine(response);
@@ -210,9 +186,10 @@ namespace imgurissimo
                     JsonObject item = value.GetObject();
                     string link = item.GetNamedString("link");
                     string title = item.GetNamedString("title", "");
-                    ListOfPictures.Add(new imgur.imageInfo(title, link));
+                    ListOfPictures.Add(new imageInfo(title, link));
                 }
                 CurrentSubreddit = subreddit;
+                ChangeButton.Content = string.Format("/r/{0}", subreddit);
             }
             else
             {
@@ -225,8 +202,8 @@ namespace imgurissimo
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             MyFlipView.Opacity = 0.5;
-            imgur.imageInfo info = MyFlipView.SelectedItem as imgur.imageInfo;
-            await Client.SaveAsFile(info.Filename);
+            imageInfo info = MyFlipView.SelectedItem as imageInfo;
+            await Client.SaveAsFile(info.Filename, CurrentSubreddit);
             MyFlipView.Opacity = 1.0;
         }
 
